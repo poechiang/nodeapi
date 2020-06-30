@@ -1,0 +1,10 @@
+import app from './core/app';
+import {runServer} from './core/server'
+import router from './core/router';
+
+
+router.load(app);
+
+const port = parseInt(process.env.PORT || '10000')
+
+runServer(app,port);
