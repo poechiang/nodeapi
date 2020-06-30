@@ -42,7 +42,7 @@ const load = (app)=>{
     let infos = scan(root);
     (infos||[]).map((info)=>{
         let url = info.url.replace(/\/index/g,'')||'/';
-        console.log(url)
+        console.log(info.method,url)
         router[info.method](url,info.default)
     })
     
