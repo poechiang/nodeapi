@@ -17,6 +17,10 @@
     "babel-cli": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-stage-2": "^6.24.1",
+    "colors-console": "^1.0.3",
+    "extend": "^3.0.2",
+    "file-stream-rotator": "^0.5.7",
+    "mysql": "^2.18.1",
     "nodemon": "^2.0.4"
   }
 }
