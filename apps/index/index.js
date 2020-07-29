@@ -1,5 +1,5 @@
 import Db from '../../core/db';
-import config from '../../config/index';
+// import config from '../../config/index';
 
 export default (req, res, next) => {
 

@@ -2,6 +2,7 @@ import './lib/ployfill';
 import app,{port} from './core/app';
 import {runServer} from './core/server'
 import router from './core/router';
+import Db from './core/db';
 
 
 router.load(app);

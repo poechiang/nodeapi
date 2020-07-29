@@ -2,7 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import cookieParser from 'cookie-parser';
-
+import less from 'less-middleware';
 import config from '../config/index';
 import { is,Console } from '../lib/util';
 
@@ -22,6 +22,20 @@ config.log.forEach((item,key)=>{
         let morgan = require(key),stream;
         
         if(item.enabled){
+            
+            let format;
+            morgan.token('localDate',function getDate(req) {
+                let date = new Date();
+                return date.format('mmm dd, YYYY www HH:MM:ss.fff')
+            })
+            if(is.array(item.format)){
+                morgan.format(...item.format);
+                format = item.format[0];
+            }
+            else{
+                format = item.format;
+            }
+
             if(item.out==='file'||is.array(item.out) && item.out.contains('file')){
                 
                 if(item.rotator){
@@ -36,14 +50,13 @@ config.log.forEach((item,key)=>{
                 else{
                     stream = fs.createWriteStream(path.resolve(PROJ_ROOT, item.file,'http.log'), {flags: 'a'})
                 }
-                
-                app.use(morgan(item.format, {stream}));
+                app.use(morgan(format, {stream}));
             }
             if((item.out==='database'||is.array(item.out)&&item.out.contains('database')) && is.function(item.database)){
-                app.use(morgan(item.format,{stream:{write:item.database}}));
+                app.use(morgan(format,{stream:{write:item.database}}));
             }
             if(item.out==='std' || is.array(item.out) && item.out.contains('std')){
-                app.use(morgan(item.format));
+                app.use(morgan(format));
             }
         }
     }
@@ -51,10 +64,21 @@ config.log.forEach((item,key)=>{
 })
 
 
+
+app.use(less("resource",{    
+    debug: true,
+    pathRoot:path.resolve(PROJ_ROOT),
+    dest: "public",
+    force: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(config.static));
+
+
+
 
 export {port}
 export default app;

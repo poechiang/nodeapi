@@ -2,6 +2,12 @@ doctype html
 html
   head
     title= title
-    link(rel='stylesheet', href='/static/css/style.css')
+    link(rel='stylesheet', href='/static/css/global.css')
+    block css
+    
+
   body
     block content
+
+    block footer = 
+    footer.page-footer.cr poe © 2020

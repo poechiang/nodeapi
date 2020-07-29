@@ -10,10 +10,10 @@
         "js": "node --harmony"
     },
     "watch": [
-
+        
     ],
     "env": {
         "NODE_ENV": "development"
     },
-    "ext": "js json njk css js "
+    "ext": "js tjs mjs jade css scss less"
 }

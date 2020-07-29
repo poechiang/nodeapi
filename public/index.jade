@@ -1,5 +1,8 @@
 extends layout
+block css 
+  link(rel='stylesheet', href='/static/css/index.css')
 
 block content
-  h1= title
-  p Welcome to #{title}
+  main#home.page-wrap
+    h1.title= title
+    p.desc Welcome to #{title}

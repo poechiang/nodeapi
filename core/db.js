@@ -1,6 +1,7 @@
 import {createConnection} from 'mysql';
 import extend from 'extend';
-import util,{Console} from '../lib/util';
+import util,{Console,is} from '../lib/util';
+import config from '../config/index';
 
 const parseOption = (options)=>{
     if(!options){
@@ -27,9 +28,9 @@ const parseTableName = ({tableName,alias}={})=>{
     
 }
 const Db = function(options){
-    this.config = options;
+    this.config = extend(config.database,options||{});
     this.options = {};
-    this.connection = createConnection(options);
+    this.connection = createConnection(this.config);
     return this;
 }
 Db.prototype.table = function(tname){
@@ -52,25 +53,36 @@ Db.prototype.fields = function(fields){
     if(util.is.array(fields)){
         fields = fields.join(',');
     }
-    this.options.fields = fields;
+    this.options.fields = fields||'*';
     return this;
 }
 Db.prototype.all = function (options) {
+    if(!options){
+        throw '[SQL] Missed argument ( options ) of method ( Db.all )';
+    }
+    if(is.function(options)){
+        options={success:options}
+    }
+    let {success,error,...opts} = options;
+    options = extend(this.options,parseOption(opts||{}));
+    let tname = parseTableName(this.options);
 
-    options = extend(this.options,parseOption(options||{}));
-    
-    let tname = parseTableName(options);
-    let fields = this.options.tableName;
+    let fields=this.options.fields||'*'
     let where = this.options.where;
     where = where? `WHERE ${where||'1'}`:''
     let sql = `SELECT ${fields} FROM ${tname} ${where}`
-    this.connection.connect((err)=>{
-        if(err) {
-            throw 'sql connect failure!';
+    
+    this.connection.query(sql,(err,rows)=>{
+        if (err){
+            err.msg = '[SQL] query operator failure!';
+            error && error(err)
+            Console.info(err.msg);
         }
-        Console.info('sql connect success');
-
+        else{
+            success && success(rows)
+        }
+        
     })
-    Console.log(sql)
 }
+global.db = (options)=>(new Db(options));
 export default Db;

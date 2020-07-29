@@ -1,9 +1,9 @@
 export default {
     host                :   'localhost',	        // 主机地址 （默认：localhost）
 　　user                :   'root',	                // 用户名
-　　password            :   'poe@0688800',	                    // 密码
+　　password            :   '',	                    // 密码
 　　database            :   '',	                    // 数据库名
-　　port                :   3308,	                // 端口号 （默认：3306）
+　　port                :   3306,	                // 端口号 （默认：3306）
 　　charset             :   'UTF8_GENERAL_CI',	    // 连接字符集（默认：'UTF8_GENERAL_CI'，注意字符集的字母都要大写）
 　　localAddress        :   '',	                    // 此IP用于TCP连接（可选）
 　　socketPath          :   '',	                    // 连接到unix域路径，当使用 host 和 port 时会被忽略
