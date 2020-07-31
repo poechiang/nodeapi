@@ -10,5 +10,6 @@ export default {
     static:join(__dirname,'../public'),
     viewEngine:'jade',
     log,
+    cors:true,
     database,
 }

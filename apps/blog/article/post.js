@@ -1,7 +1,7 @@
-export const method = 'get';
+export const method = 'post';
 export default (req,res,next)=>{
-    let params = req.query
-
-    res.json(params);
+    let params = req.body
+    
+    res.send(params);
 
 }
