@@ -1,5 +1,6 @@
 import {createConnection} from 'mysql';
 import extend from 'extend';
+import config from '../config/index';
 import util,{Console} from '../lib/util';
 
 const parseOption = (options)=>{
@@ -35,6 +36,9 @@ const Db = function(options){
 Db.prototype.table = function(tname){
     this.options.tableName = tname;
     return this;
+}
+Db.table = function(tname){
+    return (new Db()).table(tname)
 }
 Db.prototype.where = function(...args){
 
