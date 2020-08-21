@@ -1,5 +1,5 @@
 
-import Db from '../../../core/db';
+import {Db} from '../../../core/db';
 export const method = 'post';
 export default (req,res,next)=>{
     let params = req.body

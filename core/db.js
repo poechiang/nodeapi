@@ -59,22 +59,94 @@ Db.prototype.fields = function(fields){
     this.options.fields = fields;
     return this;
 }
-Db.prototype.all = function (options) {
-
-    options = extend(this.options,parseOption(options||{}));
-    
-    let tname = parseTableName(options);
-    let fields = this.options.tableName;
-    let where = this.options.where;
-    where = where? `WHERE ${where||'1'}`:''
-    let sql = `SELECT ${fields} FROM ${tname} ${where}`
-    this.connection.connect((err)=>{
-        if(err) {
-            throw 'sql connect failure!';
+Db.prototype.all = function (condi) {
+    return new Promise((resolve,reject)=>{
+        let tname = parseTableName(options);
+        let fields = this.options.tableName;
+        let where;
+        if(typeof condi = 'string'){
+            where = condi
         }
-        Console.info('sql connect success');
+        else if (typeof condi==='number') {
+            where = `${this.options.pk||'id'}=${condi}`
+        }
+        else if(
+            where = condi.map((item)=>{
+                if(typeof item = 'string'){
+                    return item;
+                }
+                else if (typeof item==='number') {
+                    return `${this.options.pk||'id'}=${item}`
+                }
+            }).join(' OR ')
+        )
+        where = where? `WHERE ${where}`:''
+        let sql = `SELECT ${fields} FROM ${tname} ${where}`
+        this.connection.connect((err)=>{
+            if(err) {
+                return reject('sql connect failure!');
+            }
+            this.connection.query(sql,(err,result)=>{
+                if(err) {
+                    return reject('sql connect failure!');
+                }
+                return resolve({result,sql})
+            })
 
+        })
     })
-    Console.log(sql)
+    
 }
-export default Db;
+Db.prototype.append = async function(data){
+
+    return new Promise((resolve,reject)=>{
+
+        let tname = parseTableName(options);
+        let fields = this.options.fields;
+
+        let sql;
+        if(Array.isArray(data)){
+            sql = `INSERT INTO ${{tname}} (${fields || ...columns}) VALUES ?`
+        }
+        else if (typeof data === object) {
+            let columns=[],values=[];
+            for(let col in data){
+                columns.push(col)
+                values.push(data[col])
+            }
+            sql = `INSERT INTO ${{tname}} (${...columns}) VALUES (${...values})`
+        }
+        else {
+            reject('invalid data format')
+        }
+
+        const cb = (err,result)=>{
+            if(err) {
+                return reject('sql connect failure!');
+            }
+            return resolve({result,sql})
+        }
+
+        this.connection.connect((err)=>{
+            if(err) {
+                return reject('sql connect failure!');
+            }
+
+            Console.info('sql connect success');
+
+            if(Array.isArray(data)){
+                this.connection.query(sql, values,cb)
+            }
+            else if (typeof data === object) {
+                this.connection.query(sql,cb)
+            }
+
+        })
+        Console.log(sql)
+    })
+    
+}
+export {Db};
+export const db=(tname)=>(Db.table(tname))
+export default {Db,db};
+
