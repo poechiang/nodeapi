@@ -1,4 +1,4 @@
-import Db from '../../core/db';
+import Db from '../../core/database';
 import config from '../../config/index';
 
 export default (req, res, next) => {

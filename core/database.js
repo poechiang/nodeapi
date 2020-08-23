@@ -28,9 +28,9 @@ const parseTableName = ({tableName,alias}={})=>{
     
 }
 const Db = function(options){
-    this.config = options;
+    this.config = extend(true,{},config,options||{});
     this.options = {};
-    this.connection = createConnection(options);
+    this.connection = createConnection(this.config);
     return this;
 }
 Db.prototype.table = function(tname){
@@ -64,7 +64,7 @@ Db.prototype.all = function (condi) {
         let tname = parseTableName(options);
         let fields = this.options.tableName;
         let where;
-        if(typeof condi = 'string'){
+        if(typeof condi == 'string'){
             where = condi
         }
         else if (typeof condi==='number') {
@@ -72,7 +72,7 @@ Db.prototype.all = function (condi) {
         }
         else if(
             where = condi.map((item)=>{
-                if(typeof item = 'string'){
+                if(typeof item == 'string'){
                     return item;
                 }
                 else if (typeof item==='number') {
@@ -106,7 +106,7 @@ Db.prototype.append = async function(data){
 
         let sql;
         if(Array.isArray(data)){
-            sql = `INSERT INTO ${{tname}} (${fields || ...columns}) VALUES ?`
+            sql = `INSERT INTO ${{tname}} (${fields || columns.join(', ')}) VALUES ?`
         }
         else if (typeof data === object) {
             let columns=[],values=[];
@@ -114,7 +114,7 @@ Db.prototype.append = async function(data){
                 columns.push(col)
                 values.push(data[col])
             }
-            sql = `INSERT INTO ${{tname}} (${...columns}) VALUES (${...values})`
+            sql = `INSERT INTO ${{tname}} (${columns.jsoin(', ')}) VALUES (${values.join(', ')})`
         }
         else {
             reject('invalid data format')
