@@ -22,6 +22,7 @@
     "file-stream-rotator": "^0.5.7",
     "log4js": "^6.3.0",
     "mysql": "^2.18.1",
-    "nodemon": "^2.0.4"
+    "nodemon": "^2.0.4",
+    "type-is.poe": "^1.0.1"
   }
 }
