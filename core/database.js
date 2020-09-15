@@ -1,256 +1,227 @@
 import { createConnection } from 'mysql';
 import extend from 'extend';
-import config from '../config/index';
-import util, { Console } from '../lib/util';
-import {
-    isArray,
-    isBoolean,
-    isBuffer,
-    isDate,
-    isDeepStrictEqual,
-    isError,
-    isFunction,
-    isNull,
-    isNullOrUndefined,
-    isObject,
-    isPrimitive,
-    isRegExp,
-    isString,
-    isSymbol,
-    isUndefined,
-    isNumber
-} from 'util';
+import { database, getEnv } from '../config/index';
+import { underline } from '@poech/camel-hump-under';
+
+import is from '@poech/type-is';
 
 let connection;
-const parseOption = ( options ) => {
-    if ( !options ) {
-        throw `[SQL] Missing argument options`;
-    }
-    if ( util.is.string( options ) ) {
-        options = { where: options }
-    }
-    if ( util.is.function( options ) ) {
-        options = { callback: options }
-    }
-    return options;
+const parseOption = (options) => {
+  if (!options) {
+    throw `[SQL] Missing argument options`;
+  }
+  if (is.string(options)) {
+    options = { where: options }
+  }
+  if (is.function(options)) {
+    options = { callback: options }
+  }
+  return options;
 }
-const parseTableName = ( { tableName, alias } = {} ) => {
-    if ( !tableName ) {
-        throw `[SQL] Missing Argument tableName`;
-    }
-    tableName = util.underline( tableName ).replace( /^_/, '' );
-    if ( alias ) {
-        tableName = `${alias}_${tableName}`;
-    }
+const parseTableName = ({ tableName, alias } = {}) => {
+  if (!tableName) {
+    throw `[SQL] Missing Argument tableName`;
+  }
+  tableName = underline(tableName).replace(/^_/, '');
+  if (alias) {
+    tableName = `${alias}_${tableName}`;
+  }
 
-    return tableName;
+  return tableName;
 
 }
-const parseWhere = ( ...condi ) => {
-    ( condi || [ ] ).map( ( item, index ) => {
+const parseWhere = (...condi) => {
+  return (condi || []).map((item, index) => {
 
-        if ( isArray( item ) ) {
-            return parseWhere( ...item )
-        }
-
-        if ( isString( item ) ) {
-            return item.trim( )
-        }
-
-        if ( isObject( item ) ) {
-            let sub = [ ];
-            for ( let col in item ) {
-                sub.push( `${col} = ${item[col]}` );
-            }
-            return sub.join( ' AND ' );
-        }
-
-        if ( isNumber( item ) ) {
-            return `id = ${item}`
-        }
-    } ).join( ' OR ' );
-}
-
-const insert = ( sql, data, value ) => {
-
-    const cb = ( err, result ) => {
-        if ( err ) {
-            return reject( 'sql connect failure!' );
-        }
-        return resolve( { result, sql } )
+    if (is.array(item)) {
+      return parseWhere(...item)
     }
 
-
-    return new Promise( ( resolve, reject ) => {
-        connection.connect( ( err ) => {
-            if ( err ) {
-                return reject( 'sql connect failure!' );
-            }
-
-            Console.info( 'sql connect success' );
-
-            if ( Array.isArray( data ) ) {
-                connection.query( sql, values, cb )
-            } else if ( typeof data === 'object' ) {
-                connection.query( sql, cb )
-            }
-
-        } )
-        Console.log( sql )
-    } )
-}
-const Db = function ( options ) {
-    this.config = extend( true, {}, config, options || {} );
-    this.options = {};
-    connection = createConnection( this.config );
-    return this;
-}
-Db.prototype.table = function ( tname ) {
-    this.options.tableName = tname;
-    return this;
-}
-Db.table = function ( tname ) {
-    return ( new Db( ) ).table( tname )
-}
-Db.prototype.where = function ( ...condi ) {
-
-    this.options.where = parseWhere( ...condi );
-    return this;
-}
-Db.prototype.join = function ( tables ) {
-    this.options.join = tables;
-    return this;
-}
-Db.prototype.fields = function ( fields ) {
-    if ( util.is.string( fields ) ) {
-        fields = fields.split( /[,\s]+/ ).filter( ( item ) => ( item ) );
+    if (is.string(item)) {
+      return item.trim()
     }
-    if ( util.is.array( fields ) ) {
-        fields = fields.join( ',' );
-    }
-    this.options.fields = fields;
-    return this;
-}
-Db.prototype.all = function ( condi ) {
-    return new Promise( ( resolve, reject ) => {
-        let tname = parseTableName( options );
-        let fields = this.options.tableName;
-        let where;
-        if ( typeof condi == 'string' ) {
-            where = condi
-        } else if ( typeof condi === 'number' ) {
-            where = `${this.options.pk||'id'}=${condi}`
-        } else if (
-            where = condi.map( ( item ) => {
-                if ( typeof item == 'string' ) {
-                    return item;
-                } else if ( typeof item === 'number' ) {
-                    return `${this.options.pk||'id'}=${item}`
-                }
-            } ).join( ' OR ' )
-        )
-            where = where ? `WHERE ${where}` : ''
-        let sql = `SELECT ${fields} FROM ${tname} ${where}`
-        connection.connect( ( err ) => {
-            if ( err ) {
-                return reject( 'sql connect failure!' );
-            }
-            connection.query( sql, ( err, result ) => {
-                if ( err ) {
-                    return reject( 'sql connect failure!' );
-                }
-                return resolve( { result, sql } )
-            } )
 
-        } )
-    } )
+    if (is.object(item)) {
+      let sub = [];
+      for (let col in item) {
+        if (is.string(item[col])) {
 
-}
-Db.prototype.get = async function ( ...condi ) {
-    return new Promise( ( resolve, reject ) => {
-        let tname = parseTableName( options );
-        let fields = this.options.tableName;
-        let where = parseWhere( ...condi )
-        where = where ? `WHERE ${where}` : ''
-        let sql = `SELECT ${fields} FROM ${tname} ${where}`
-        connection.connect( ( err ) => {
-            if ( err ) {
-                return reject( 'sql connect failure!' );
-            }
-            connection.query( sql, ( err, result ) => {
-                if ( err ) {
-                    return reject( 'sql connect failure!' );
-                }
-                return resolve( { result, sql } )
-            } )
-
-        } )
-    } )
-}
-
-
-Db.prototype.count = async function ( ...condi ) {
-    return new Promise( ( resolve, reject ) => {
-        let tname = parseTableName( options );
-        let fields = this.options.tableName;
-        let where = parseWhere( ...condi )
-        where = where ? `WHERE ${where}` : ''
-        let sql = `SELECT COUNT(*) FROM ${tname} ${where}`
-        connection.connect( ( err ) => {
-            if ( err ) {
-                return reject( 'sql connect failure!' );
-            }
-            connection.query( sql, ( err, result ) => {
-                if ( err ) {
-                    return reject( 'sql connect failure!' );
-                }
-                return resolve( { result: result.length, sql } )
-            } )
-
-        } )
-    } )
-}
-const parseData = ( data ) => {
-
-}
-const parseColumns = ( data, fields ) => {
-    if ( fields ) {
-        if ( Array.isArray( fields ) ) {
-            return fields;
+          sub.push(`${col} = '${item[col]}'`);
         } else {
-            return Object.valueOf( fields )
+
+          sub.push(`${col} = ${item[col]}`);
         }
+      }
+      return sub.join(' AND ');
     }
-    if ( Array.isArray( data ) ) {
 
-    } else if ( typeof data === 'object' ) {
-
+    if (is.number(item)) {
+      return `id = ${item}`
     }
+  }).join(' OR ');
 }
-Db.prototype.append = async function ( data ) {
-
-    let tname = parseTableName( this.options );
-    let fields = this.options.fields;
-
-    let sql = `INSERT INTO ${tname} (${fields || columns.join(', ')}) VALUES `;
-    if ( Array.isArray( data ) ) {
-        sql = `INSERT INTO ${tname} (${fields || columns.join(', ')}) VALUES ?`
-    } else if ( typeof data === 'object' ) {
-        let columns = [ ],
-            values = [ ];
-        for ( let col in data ) {
-            columns.push( col )
-            values.push( data[ col ] )
-        }
-        sql = `INSERT INTO ${tname} (${columns.join(', ')}) VALUES (${values.join(', ')})`
-        Console.info( tname, columns )
-    } else {
-        reject( 'invalid data format' )
+const connect = () => (new Promise((resolve, reject) => {
+  connection.connect((err) => {
+    if (err) {
+      return reject('sql connect failure!');
     }
+    return resolve()
+  })
+}))
+const query = (sql) => (new Promise((resolve, reject) => {
+  connection.query(sql, (err, result) => {
+    if (err) {
+      return reject(`query sql ( ${sql} ) failure!`);
+    }
+    return resolve({ result, sql })
+  })
+}))
+const Db = function (options) {
+  this.config = extend(true, {}, database, options || {});
+  this.options = {};
+  connection = createConnection(this.config);
 
-    return await insert( sql, data )
+  return this;
+}
+Db.prototype.table = function (tname) {
+  this.options.tableName = tname;
+  return this;
+}
+Db.table = function (tname) {
+  return (new Db()).table(tname)
+}
+Db.prototype.where = function (...condi) {
+
+  this.options.where = parseWhere(...condi);
+  return this;
+}
+Db.prototype.join = function (tables) {
+  this.options.join = tables;
+  return this;
+}
+Db.prototype.fields = function (fields) {
+  if (is.string(fields)) {
+    fields = fields.split(/[,\s]+/).filter((item) => (item));
+  }
+  if (is.array(fields)) {
+    fields = fields.join(',');
+  }
+  this.options.fields = fields;
+  return this;
+}
+Db.prototype.all = async function (...condi) {
+  let tname = parseTableName(this.options);
+  let fields = this.options.fields || '*';
+  let where = [this.options.where, parseWhere(...condi)].filter((w) => (!!w))
+
+  where = !is.empty(where) ? `WHERE ${where}` : '';
+
+  let sql = `SELECT ${fields} FROM ${tname} ${where}`
+  try {
+    await connect();
+    let rlt = await query(sql);
+    console.log(rlt.sql, rlt.result)
+    if (is.empty(rlt.result)) {
+      return [];
+    } else {
+      return rlt.result;
+    }
+  } catch (err) {
+    console.error(err)
+    return []
+  } finally {
+    this.options = {}
+  }
+}
+Db.prototype.get = async function (...condi) {
+  let datas = await this.all(...condi);
+  if (is.empty(datas)) {
+    return null
+  }
+  return datas[0];
+}
+
+
+Db.prototype.count = async function (...condi) {
+
+  let tname = parseTableName(this.options);
+
+  let where = [this.options.where, parseWhere(...condi)].filter((w) => (!!w))
+
+  where = !is.empty(where) ? `WHERE ${where}` : '';
+
+  let sql = `SELECT COUNT(*) as count FROM ${tname} ${where}`
+  try {
+    await connect();
+    let rlt = await query(sql);
+    console.log(rlt.sql, rlt.result)
+
+    return rlt.result[0].count;
+
+  } catch (err) {
+    console.error(err)
+    return null
+  } finally {
+    this.options = {}
+  }
+
+}
+
+const parseData = (data, cols) => {
+  let values = cols.split(',').map((col) => {
+    let v = data[col.trim()]
+    if (is.string(v)) {
+      v = `'${v}'`
+    }
+    return v !== undefined ? v : '';
+  })
+  return `(${values.join(', ')})`;
+}
+const parseColumns = (data) => {
+  let obj
+  if (is.array(data)) {
+    obj = extend({}, ...data);
+  } else if (is.object(data)) {
+    obj = data;
+  } else {
+    throw new Error('invalid data format')
+  }
+
+  return Object.keys(obj);
+}
+Db.prototype.append = async function (data) {
+
+  let tname = parseTableName(this.options);
+  let fields = this.options.fields;
+  if (!fields) {
+    fields = parseColumns(data).join(',')
+  }
+  let sql, dataList;
+  if (is.object(data)) {
+    dataList = parseData(data, fields);
+  } else if (is.array(data)) {
+    dataList = data.map((item) => (parseData(item, fields))).join(', ');
+  } else {
+    throw new Error('invalid data format')
+  }
+
+  sql = `INSERT INTO ${tname} (${fields}) VALUES ${dataList}`
+
+  try {
+    await connect();
+    let rlt = await query(sql);
+    console.log(rlt.sql, rlt.result)
+
+    return rlt.result;
+
+  } catch (err) {
+    console.error(err)
+    return null
+  } finally {
+    this.options = {}
+  }
 
 }
 export { Db };
-export const db = ( tname ) => ( Db.table( tname ) )
+export const db = (tname) => (Db.table(tname))
 export default { Db, db };

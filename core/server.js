@@ -4,50 +4,51 @@ import http from 'http';
 
 const debuger = debug('nodeapi:server');
 
-const runServer = (app,port)=>{
+const runServer = (app) => {
 
-    
 
-    var server = http.createServer(app);
+  let port = app.get('port');
 
-    server.on('error', (error) => {
-    
-        if (error.syscall !== 'listen') {
-            throw error;
-        }
+  var server = http.createServer(app);
 
-        var bind = typeof port === 'string'
-            ? 'Pipe ' + port
-            : 'Port ' + port;
+  server.on('error', (error) => {
 
-        // handle specific listen errors with friendly messages
-        switch (error.code) {
-            case 'EACCES':
-            console.error(bind + ' requires elevated privileges');
-            process.exit(1);
-            break;
-            case 'EADDRINUSE':
-            console.error(bind + ' is already in use');
-            process.exit(1);
-            break;
-            default:
-            throw error;
-        }
-    });
-    server.on('listening', () => {
-        var addr = server.address();
-        var bind = typeof addr === 'string'
-            ? 'pipe ' + addr
-            : 'port ' + addr.port;
-        debuger('Listening on ' + bind);
-    });
+    if (error.syscall !== 'listen') {
+      throw error;
+    }
 
-    /**
-     * Listen on provided port, on all network interfaces.
-     */
+    var bind = typeof port === 'string' ?
+      'Pipe ' + port :
+      'Port ' + port;
 
-    server.listen(port);
-    return server
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+      case 'EACCES':
+        console.error(bind + ' requires elevated privileges');
+        process.exit(1);
+        break;
+      case 'EADDRINUSE':
+        console.error(bind + ' is already in use');
+        process.exit(1);
+        break;
+      default:
+        throw error;
+    }
+  });
+  server.on('listening', () => {
+    var addr = server.address();
+    var bind = typeof addr === 'string' ?
+      'pipe ' + addr :
+      'port ' + addr.port;
+    debuger('Listening on ' + bind);
+  });
+
+  /**
+   * Listen on provided port, on all network interfaces.
+   */
+
+  server.listen(port);
+  return server
 }
 
-export {runServer}
+export { runServer }

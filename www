@@ -1,10 +1,36 @@
 import './lib/ployfill';
-import app,{port} from './core/app';
-import {runServer} from './core/server'
-import router from './core/router';
+import app from './core/app';
+import { runServer } from './core/server'
+import { setEnv } from './config/index';
+import router, { routerMap } from './core/router';
+import createError from 'http-errors';
 
 
+app.use(function (req, res, next) {
+
+  const actulPath = routerMap[req.url];
+  req.MODULE = actulPath.split('/')[1]
+  next()
+
+});
 
 
-router.load(app);
-runServer(app,port);
+app.use('/', router)
+
+app.use(function (req, res, next) {
+  next(createError(404));
+});
+
+// error handler
+app.use(function (err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  res.render('error');
+
+});
+
+runServer(app);
